@@ -1,5 +1,8 @@
 package com.demo.common;
 
+import org.beetl.core.GroupTemplate;
+import org.beetl.ext.jfinal.BeetlRenderFactory;
+
 import com.demo.blog.Blog;
 import com.demo.blog.BlogController;
 import com.demo.index.IndexController;
@@ -26,6 +29,7 @@ public class DemoConfig extends JFinalConfig {
 		loadPropertyFile("a_little_config.txt");				// 加载少量必要配置，随后可用getProperty(...)获取值
 		me.setDevMode(getPropertyToBoolean("devMode", false));
 		me.setViewType(ViewType.JSP); 							// 设置视图类型为Jsp，否则默认为FreeMarker
+
 	}
 	
 	/**

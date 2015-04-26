@@ -1,7 +1,24 @@
 package com.demo.blog;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.beetl.core.Configuration;
+import org.beetl.core.GroupTemplate;
+import org.beetl.core.Template;
+import org.beetl.core.resource.ClasspathResourceLoader;
+import org.beetl.core.resource.FileResourceLoader;
+import org.beetl.core.resource.StringTemplateResourceLoader;
+import org.beetl.core.resource.WebAppResourceLoader;
+import org.beetl.ext.jfinal.BeetlRenderFactory;
+
 import com.jfinal.aop.Before;
 import com.jfinal.core.Controller;
+import com.jfinal.plugin.activerecord.Page;
 
 /**
  * BlogController
@@ -12,7 +29,8 @@ public class BlogController extends Controller {
 	
 	public void index() {
 		setAttr("blogPage", Blog.me.paginate(getParaToInt(0, 1), 10));
-		render("blog.jsp");
+		//render("blog.jsp");
+		renderJson();
 	}
 	
 	public void add() {
@@ -37,6 +55,37 @@ public class BlogController extends Controller {
 	public void delete() {
 		Blog.me.deleteById(getParaToInt());
 		redirect("/blog");
+	}
+	
+	public void frModeltoProg()
+	{	
+	 	WebAppResourceLoader resourceLoader = new WebAppResourceLoader();
+		Configuration cfg;
+		try {
+			cfg = Configuration.defaultConfiguration();
+			GroupTemplate gt = new GroupTemplate(resourceLoader, cfg);
+		//	GroupTemplate gt = GroupTemplateHelper.instance();
+			Template t = gt.getTemplate("WEB-INF/tpl/tl.txt");//获取模板文件  hello Richard.$(total)。
+			Page<Blog> page = Blog.me.paginate(1, 10);
+	        Map<String, Object> map = new HashMap<String, Object>();
+	        map.put("total", page.getTotalRow());
+	        map.put("rows", page.getList());
+			System.out.println(map);	
+	       // gt.setSharedVars(map);
+			System.out.println(page.getTotalRow());	
+			t.binding("map",map);
+	 		String str = t.render();
+ 			System.out.println(str);	
+			OutputStream out = new FileOutputStream("C://hyh.java");//输出java文件
+
+			t.renderTo(out) ;
+			out.flush();
+			out.close();
+			renderText(str);
+		} catch (IOException e) {
+			//renderText("Something wrong in beetl making.");
+			e.printStackTrace();
+		}
 	}
 }
 
