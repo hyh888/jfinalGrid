@@ -1,0 +1,9 @@
+
+hello Richard!!!!!! ${map["list"].rows[0].id}
+input外面的那个容器加上overflow:hidden;即可。 
+ 
+/* 问题出在了 input 的边框问题 ,默认有 border-style: inset 边框 2 象素 */
+/* 在包含 input 的 div 中 可以加上面代码 padding-right 减去边框就行 */
+/* 如果不需要太长的 input ， 可以设置 input 宽度为 99% */
+/* 也可以不加任何代码，但需要把input 边框去掉 如：border: none; */
+/* 去掉边框后 在 input 的外面套一个 div ，把div 设置上边框 可以实现你要的效果 */
