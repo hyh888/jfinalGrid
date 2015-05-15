@@ -1,25 +1,15 @@
-package com.demo.Ordheader;
+package com.demo.ordheader;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.Date;
 
-import org.beetl.core.Configuration;
-import org.beetl.core.GroupTemplate;
-import org.beetl.core.Template;
-import org.beetl.core.resource.ClasspathResourceLoader;
-import org.beetl.core.resource.FileResourceLoader;
-import org.beetl.core.resource.StringTemplateResourceLoader;
-import org.beetl.core.resource.WebAppResourceLoader;
-import org.beetl.ext.jfinal.BeetlRenderFactory;
-
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import com.demo.util.ExcelHelper;
 import com.jfinal.aop.Before;
 import com.jfinal.core.Controller;
-import com.jfinal.plugin.activerecord.Page;
+import com.jfinal.plugin.activerecord.Db;
+import com.jfinal.plugin.activerecord.Record;
 
 /**
  * BlogController
@@ -29,7 +19,7 @@ import com.jfinal.plugin.activerecord.Page;
 public class OrdheaderController extends Controller {
 	
 	public void index() {
-		setAttr("blogPage", Ordheader.me.paginate(getParaToInt(0, 1), 10));
+		setAttr("blogPage", Ordheader.me.paginate(getParaToInt(0, 1), 100));
 		//render("blog.jsp");
 		renderJson();
 	}
@@ -56,39 +46,79 @@ public class OrdheaderController extends Controller {
 	
 	public void delete() {
 		Ordheader.me.deleteById(getParaToInt());
-		redirect("/item");
+		renderText("OK");
 	}
-	
-	public void frModeltoProg()
-	{	
-	 	WebAppResourceLoader resourceLoader = new WebAppResourceLoader();
-		Configuration cfg;
-		try {
-			cfg = Configuration.defaultConfiguration();
-			GroupTemplate gt = new GroupTemplate(resourceLoader, cfg);
-		//	GroupTemplate gt = GroupTemplateHelper.instance();
-			Template t = gt.getTemplate("WEB-INF/tpl/tl.txt");//获取模板文件  hello Richard.$(total)。
-			Page<Ordheader> page = Ordheader.me.paginate(1, 10);
-	        Map<String, Object> map = new HashMap<String, Object>();
-	        map.put("total", page.getTotalRow());
-	        map.put("rows", page.getList());
-			System.out.println(map);	
-	       // gt.setSharedVars(map);
-			System.out.println(page.getTotalRow());	
-			t.binding("map",map);
-	 		String str = t.render();
- 			System.out.println(str);	
-			OutputStream out = new FileOutputStream("C://hyh.java");//输出java文件
 
-			t.renderTo(out) ;
-			out.flush();
-			out.close();
-			renderText(str);
-		} catch (IOException e) {
-			//renderText("Something wrong in beetl making.");
-			e.printStackTrace();
+	public void batchCrud() {
+		String myRs = "{'params':" + getPara("params") + "}";
+		// 将字符串转为json对象，使用fastjson
+		JSONObject obj = JSON.parseObject(myRs);
+		// Object[] items=null;
+		JSONArray items;
+		try {
+			items = obj.getJSONArray("params");
+			for (int idx = 0; idx < items.size(); idx++) {
+				Integer myId = items.getJSONObject(idx).getInteger("id");
+				Integer myActive;
+				if (items.getJSONObject(idx).getBoolean("Active")){
+					myActive=1;
+				}
+				else{
+					myActive=0;
+				}
+				String myOrdDate =  items.getJSONObject(idx).getString("OrdDate");
+				String myComments = items.getJSONObject(idx).getString("Comments");
+				Integer myCustID = items.getJSONObject(idx).getInteger("CustID");				
+				String myStatus = items.getJSONObject(idx).getString("myStatus");
+				Integer myOrdTypeID = items.getJSONObject(idx).getInteger("OrdTypeID");
+				Integer mySalesRepID = items.getJSONObject(idx).getInteger("SalesRepID");
+				System.out.println("id:" + myId);
+				System.out.println("OrdDate:" + myOrdDate);
+				System.out.println("Comments:" + myComments);
+				System.out.println("CustID:" + myCustID);
+				System.out.println("myStatus:" + myStatus);
+				System.out.println("Record " + idx + "----");
+/*				if (myStatus.equals("D")) {
+					Db.deleteById("item",
+							items.getJSONObject(idx).getInteger("id"));
+				}*/
+				if (myStatus.equals("U")) {
+					if (myId != null) {
+						System.out.println("进入update");
+						Ordheader.me.findById(myId).set("Comments", myComments)
+													.set("OrdDate", myOrdDate)
+													.set("CustID", myCustID)
+													.set("SalesRepID", mySalesRepID)								
+													.set("OrdTypeID", myOrdTypeID)
+													.set("Active", myActive).update();
+					} else {
+						System.out.println("进入Add Record.");
+						Record item = new Record().set("Comments", myComments)
+													.set("OrdDate", myOrdDate)
+													.set("CustID", myCustID)
+													.set("SalesRepID", mySalesRepID)								
+													.set("OrdTypeID", myOrdTypeID)
+													.set("Active", myActive);
+						Db.save("Ordheader", item);
+					}
+				}
+			}
+		} catch (NullPointerException ne) {
+			items = null;
+			// items=new Object[]{};
 		}
+		// redirect("/");
+		setAttr("blogPage", Ordheader.me.paginate(getParaToInt(0, 1), 100));
+		renderJson();
 	}
+
+	public void createExcel() {
+		ExcelHelper im = new ExcelHelper();
+		im.CreateSimpleExcelToDisk();
+		renderText("OK");
+	}
+
+	
 }
 
 

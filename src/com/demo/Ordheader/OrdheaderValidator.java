@@ -1,4 +1,4 @@
-package com.demo.Ordheader;
+package com.demo.ordheader;
 
 import com.jfinal.core.Controller;
 import com.jfinal.validate.Validator;

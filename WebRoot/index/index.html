@@ -20,32 +20,51 @@
         <div class="blog-body">
        <h3>ms-repeat实现json输出</h3> 
         <table  width="1000px" cellpadding="0" cellspacing="0" > 
+        <thead>
         <tr>
-        <th>序号</th>
+        <th>序号</th><th>有效</th>
         <th>id</th>
-        <th >idedit</th>
+        <th width="60px">客户编号</th>
         <th>客户名称</th>
-        <th>订单日期</th>    
-        <th>id相乘</th>      
-        <th colspan="2">删除</th>
-      <th>行状态</th>              
+        <th width="60px">销售员</th>
+        <th width="60px">订单类型</th>      
+        <th>订单日期</th>   
+        <th>备注</th> 
+        <th>客户编号相乘</th>      
+        <th>删除
+        </th>
+      	<th>行状态</th>              
         </tr>
-            <tr  ms-repeat-el="items"> 
-                <td> {{$index+1}}</td> 
-                <td>{{el.id}}</td> 
-                <td width="60px"><input ms-duplex-number="el.id" /></td> 
-                <td><input ms-duplex="el.CustName" /></td>
-                <td width="100px">
-                <input ms-duplex="el.OrdDate" ms-on-blur="judLast($index,$last)" />                
-                </td>
-                <td>{{el.id*el.id}}</td>
+        </thead>
+        <tbody>
+            <tr  ms-repeat-el="items" ms-on-change="alert(1)"> 
+                <td class="n"> {{$index+1}}</td> 
+                <td><input type="checkbox" ms-duplex-checked="el.Active" ms-on-change="changeStatus($index,el.id)"/></td> 
+                <td  class="n">{{el.id}}</td> 
+                <td> 
+				<input  class="n" ms-duplex="el.CustID" ms-on-blur="judLast($index,$last,el.CustID)" ms-on-change="changeStatus($index,el.id)"/> 
+				</td> 
+                <td>{{el.CustName}}</td>
                 <td>
-                <input id="del-{{$index}}" status="{{el.myStatus}}"  ms-on-click="changeToDel($index,el.id)" type="checkbox"> 
+                      <select ms-duplex-number="el.SalesRepID" ms-on-change="changeStatus($index,el.id)">
+ 				       <option   ms-repeat-s="salesReps" ms-attr-value="s.id">{{s.RepName}}</option>
+  					   </select>
                 </td>
-                <td width="30px"><button id="delButton" type="button" ms-on-click="delRecord($index,el.id)">delete</button>
+                <td>
+                	<select ms-duplex-number="el.OrdTypeID" ms-on-change="changeStatus($index,el.id)">
+ 				       <option   ms-repeat-ot="ordTypes" ms-attr-value="ot.id">{{ot.OrdType}}</option>
+  					   </select>                               
+                </td>                
+                <td width="100px">
+                <input type="date" ms-duplex="el.OrdDate" ms-on-blur="judLast($index,$last)" ms-on-change="changeStatus($index,el.id)"/>                
+                </td>
+                <td><input ms-duplex="el.Comments" ms-on-change="changeStatus($index,el.id)"/></td>
+                <td>{{el.CustID*el.CustID}}</td>
+                <td><a href="" ms-on-click="delRecord($index,el.id)">X</a>
                 </td> 
                 <td>{{el.myStatus}}</td>
             </tr> 
+            </tbody>
         </table> 
 <button id="hyhButton" type="button" ms-on-click="saveRecord($event,this)">Save</button>
 <button id="downexcelButton" type="button" ms-on-click="createExcel()">downloadExcel</button>
@@ -67,6 +86,7 @@ td{
  color: Wheat ;
  font-family: Microsoft YaHei;
  background: Purple ;
+ font-size:15px;
  border-color:silver silver white white;
  }
  table{
@@ -76,16 +96,35 @@ td{
  border:none;
  width:100%;
  }
+ .n {
+ text-align: right;  
+ }
  </style> 
 <script>
 	var model = avalon.define("items", function(vm){
 	    vm.items = {};
+	    vm.salesReps={};
+	    vm.ordTypes={};
+	    vm.customers={};
+
 	});
+    var myDate = new Date(); 
+    var myMonth=myDate.getMonth()+1;
+    if (myMonth<10 ){
+    	myMonth="0"+myMonth;
+    };
+    var myDay=myDate.getDate();
+    if (myDay<10 ){
+    	myDay="0"+myDay;
+    };
+    var myDateTD=myDate.getFullYear()+"-"+myMonth+"-"+myDay;
+	var blankLine="({CustID:0,Active:false,OrdTypeID:0," +
+					"OrdDate:'"+myDateTD +"'," +
+					"myStatus:'A',Comments:'新订单',SalesRepID:0})";
     uploadExcel=function(){
 			    	$.getJSON('/jfinalGrid/item/uploadExcel'),function(data) {
-					    	alert(data);
 					    	items = data.items; 
-					    	items.push({});
+					    	items.push(eval(blankLine));
 				    	}; 
     			};
 
@@ -106,48 +145,60 @@ td{
 			    		};
 			    	};
     	changeStatus=function(myIndex,myId){
-					    		model.items[myIndex]["myStatus"]="E";
+					    		model.items[myIndex]["myStatus"]="U";
 					    	};
-    	changeToDel=function(myIndex,myId){
-    							model.items[myIndex]["myStatus"]="D";
-			    			}; 
-    	
-    	judLast=function(myIndex,myLast){
-			    		if (true==myLast){
-			    				model.items.push({});
-    						};
-			    		}; 
+		changeCIStatus=function(myIndex,myId){
 
-    	judChange=function(myIndex,e){
-					    	e.item["myStatus"]="U";
-					    	console.log(myIndex); 
-					    	console.log("change", e.item["id"]); 
-				    	}; 
+					    	model.items[myIndex]["myStatus"]="U";
+					    	};    	
+    	judLast=function(myIndex,myLast,myId){
+			    		if (true==myLast){
+			    				model.items.push(eval(blankLine));
+    						};
+						    $.getJSON('/jfinalGrid/customer/findCustomer/'+myId,function(data){
+						    	model.items[myIndex]["CustName"] = data["customer"]["CustName"];
+						    });	
+						    //model.items[myIndex]["CustName"]=model.customers["CustName"];    						
+			    		}; 
 
     	saveRecord=function($event,myThis){
 				    	var resultItems=new Array();
-				    	var itemCount=items.length;
+				    	var itemCount=model.items.length;
 				    	var myArrayNum=0;
 				    	for(var i=0;i<itemCount-1;i++) {
 						    	if (model.items[i]["myStatus"]!=undefined){
 									    	resultItems[myArrayNum]=new Array();
-									    	resultItems[myArrayNum]=model.items[i];
+									    	model.$model.items[i]["myStatus"]=model.items[i]["myStatus"];
+									    	resultItems[myArrayNum]=model.$model.items[i];
 									    	myArrayNum++;
 								    	};
 					    	};
 				    	var url='/jfinalGrid/item/batchCrud';
-				    	$.post(url, {params: JSON.stringify(resultItems) }).success(function(data){
-				    				model.items = data.items; 
-							    	model.items.push({});
+				    	console.log(resultItems);
+				    	var jsonText = JSON.stringify(resultItems);
+				    	alert(jsonText);
+				    	$.post(url, 
+				    		   {params: jsonText },
+				    		   function(data){
+				    			  alert(data);
+				    				model.items = data["blogPage"]["list"]; 
+							    	model.items.push(eval(blankLine));
 						    	});
 				    	}; 	
 	$(function(){
 	    $.getJSON('/jfinalGrid/item',function(data){
 	        model.items = data["blogPage"]["list"];
-	        model.items.push({id:0});
-	        console.log(model.blog);
+	        alert(blankLine);
+	        model.items.push(eval(blankLine));
 	    });
+	    $.getJSON('/jfinalGrid/salesrep',function(data){
+	        model.salesReps = data["salesrepPage"]["list"];
+	    });	    
+	    $.getJSON('/jfinalGrid/ordtype',function(data){
+	        model.ordTypes = data["ordtypePage"]["list"];
+	    });	 
 	    
+	   // avalon.scan();
 	});
 	
 </script>
